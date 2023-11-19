@@ -102,7 +102,7 @@ public class BotEradicator extends Plugin implements ApplicationListener {
             if(isBot(t.address)){
                 botsBlocked++;
                 ipCounts.increment(t.address);
-                Threads.daemon(()->kickConnectionWithoutLogging(t, Config.kickMessage.string()));
+                executor.submit(()->kickConnectionWithoutLogging(t, Config.kickMessage.string()));
                 Events.fire(new BotEvents.BotKicked(t.address));
                 return;
             }
@@ -117,7 +117,7 @@ public class BotEradicator extends Plugin implements ApplicationListener {
                 botsBlocked++;
                 botsBlockedTotal++;
                 ipCounts.increment(t.address);
-                Threads.daemon(()->kickConnectionWithoutLogging(t, Config.kickMessage.string()));
+                executor.submit(()->kickConnectionWithoutLogging(t, Config.kickMessage.string()));
                 Events.fire(new BotEvents.BotKicked(t.address));
                 return;
             }
@@ -134,7 +134,7 @@ public class BotEradicator extends Plugin implements ApplicationListener {
                 botsBlockedTotal++;
                 ipCounts.increment(t.address);
                 Events.fire(new BotEvents.BotKicked(t.address));
-                Threads.daemon(()->kickConnectionWithoutLogging(t, Config.kickMessage.string()));
+                executor.submit(()->kickConnectionWithoutLogging(t, Config.kickMessage.string()));
                 return;
             }
 
