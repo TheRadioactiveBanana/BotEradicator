@@ -19,12 +19,15 @@ import java.io.*;
 import java.net.*;
 
 import java.time.format.DateTimeFormatter;
+import java.util.concurrent.ExecutorService;
 
 import static arc.util.Strings.*;
 import static mindustry.Vars.*;
 
 @SuppressWarnings("unused") //it is used inside mindustry.
 public class BotEradicator extends Plugin implements ApplicationListener {
+
+    public static BotEradicator instance;
     private final ObjectSet<String> filteredIps = new ObjectSet<>();
     private final Seq<Subnet> bannedSubnets = new Seq<>();
     private int botsBlocked = 0;
@@ -32,8 +35,10 @@ public class BotEradicator extends Plugin implements ApplicationListener {
     private final ObjectIntMap<String> ipCounts = new ObjectIntMap<>();
     private final ObjectMap<String, Ratekeeper> ipRates = new ObjectMap<>();
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM HH:mm:ss");
+    protected ExecutorService executor = Threads.boundedExecutor("Bot Killer", Config.threadCount.num());
 
     public BotEradicator() {
+        instance = this;
         //fetch as soon as possible.
         Http.get("https://raw.githubusercontent.com/X4BNet/lists_vpn/main/output/datacenter/ipv4.txt").timeout(0)
                 .error(error ->{
@@ -186,6 +191,7 @@ public class BotEradicator extends Plugin implements ApplicationListener {
 
     @Override
     public void dispose() {
+        executor.shutdownNow().forEach(Runnable::run);
         Core.settings.put("eradicator-total-count", botsBlocked);
         log("@ Bots blocked on this session.", botsBlocked);
     }

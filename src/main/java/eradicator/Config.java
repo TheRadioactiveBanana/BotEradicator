@@ -2,6 +2,7 @@ package eradicator;
 
 import arc.*;
 import arc.struct.*;
+import arc.util.Threads;
 
 @SuppressWarnings("unused")
 public class Config {
@@ -13,7 +14,11 @@ public class Config {
         ratekeeperAmount = new ConfigValue("Ratekeeper Amount", "The amount of connections allowed by an IP within Ratekeeper Spacing.", 4),
         disableServerConnectFilter = new ConfigValue("Disable Connect Filter", "Disable the connect filter if true, the connect filter is most effective anti-bot but it will block VPN users with no message. This cannot be changed. Disabling this leaves your server vulnerable.", false),
         discordLink = new ConfigValue("Discord Link", "A link to access your discord or any other platform really, in the Kick Message {DISCORD} is replaced with this.", ""),
-        loadDelay = new ConfigValue("Loading Delay", "The delay to load filters. All plugins must be loaded when this plugin's filters are loaded. Otherwise other plugins filters will be overwritten. Make this larger if your game does not work properly.", 1);
+        loadDelay = new ConfigValue("Loading Delay", "The delay to load filters. All plugins must be loaded when this plugin's filters are loaded. Otherwise other plugins filters will be overwritten. Make this larger if your game does not work properly.", 1),
+        threadCount = new ConfigValue("Kicking Thread Count", "The amount of threads to kick connections with. Default is twice your CPU threads.", Runtime.getRuntime().availableProcessors() * 2, ()->{
+            BotEradicator.instance.executor.shutdownNow().forEach(Runnable::run);
+            BotEradicator.instance.executor = Threads.boundedExecutor("Bot Killer", Config.all.find(t->t.name.startsWith("Kicking")).num()); //mild ASB.
+        });
 
 
     public static class ConfigValue {
