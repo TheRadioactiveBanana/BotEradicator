@@ -1,0 +1,8 @@
+{
+  "name": "botEradicator",
+  "displayName:": "Bot Eradicator",
+  "description": "Utterly eradicate ddos bots.",
+  "author": "TheRadioactiveBanana",
+  "main": "eradicator.BotEradicator",
+  "version": "1.0"
+}

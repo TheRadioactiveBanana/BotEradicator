@@ -1,0 +1,37 @@
+[11-17-2023 14:09:44] [I] Server loaded. Type 'help' for help.
+[11-17-2023 14:09:49] [I] Shutting down server.
+[11-17-2023 14:12:11] [I] 1 mods loaded.
+[11-17-2023 14:12:11] [I] Server loaded. Type 'help' for help.
+[11-17-2023 14:14:10] [I] Shutting down server.
+[11-17-2023 14:18:46] [I] 1 mods loaded.
+[11-17-2023 14:18:46] [I] Server loaded. Type 'help' for help.
+[11-17-2023 14:19:28] [I] 1 mods loaded.
+[11-17-2023 14:19:28] [I] Server loaded. Type 'help' for help.
+[11-17-2023 14:22:16] [I] 1 mods loaded.
+[11-17-2023 14:22:16] [I] Server loaded. Type 'help' for help.
+[11-17-2023 14:24:09] [I] Shutting down server.
+[11-17-2023 14:24:18] [I] 1 mods loaded.
+[11-17-2023 14:24:18] [I] Server loaded. Type 'help' for help.
+[11-17-2023 14:26:04] [I] 1 mods loaded.
+[11-17-2023 14:26:04] [I] Server loaded. Type 'help' for help.
+[11-17-2023 14:26:21] [I] Loading map...
+[11-17-2023 14:26:21] [I] Map loaded.
+[11-17-2023 14:26:21] [I] Opened a server on port 6567.
+[11-17-2023 14:26:25] [E] java.lang.NullPointerException: Cannot invoke "arc.func.Cons2.get(Object, Object)" because "connectConfirmListener" is null
+	at eradicator.BotEradicator.lambda$init$5(BotEradicator.java:124)
+	at mindustry.net.Net.handleServerReceived(Net.java:310)
+	at mindustry.net.ArcNetProvider$2.lambda$received$2(ArcNetProvider.java:150)
+	at arc.util.TaskQueue.run(TaskQueue.java:17)
+	at arc.backend.headless.HeadlessApplication.mainLoop(HeadlessApplication.java:81)
+	at arc.backend.headless.HeadlessApplication$1.run(HeadlessApplication.java:52)
+
+[11-17-2023 14:29:55] [I] Shutting down server.
+[11-17-2023 14:29:55] [I] Eradicator has disconnected. [R2fH6Z3X9+0AAAAAY+geJw==] (closed)
+[11-17-2023 14:30:13] [I] 1 mods loaded.
+[11-17-2023 14:30:13] [I] Server loaded. Type 'help' for help.
+[11-17-2023 14:30:40] [I] Loading map...
+[11-17-2023 14:30:40] [I] Map loaded.
+[11-17-2023 14:30:40] [I] Opened a server on port 6567.
+[11-17-2023 14:30:43] [I] Eradicator has connected. [R2fH6Z3X9+0AAAAAY+geJw==]
+[11-17-2023 14:31:20] [I] Shutting down server.
+[11-17-2023 14:31:20] [I] Eradicator has disconnected. [R2fH6Z3X9+0AAAAAY+geJw==] (closed)

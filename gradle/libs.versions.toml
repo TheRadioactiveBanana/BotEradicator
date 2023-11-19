@@ -1,0 +1,10 @@
+[versions]
+mindustryVersion = "v146"
+
+[libraries]
+
+arc = { module = "com.github.Anuken.Arc:arc-core", version.ref = "mindustryVersion" }
+mindustry = { module = "com.github.Anuken.Mindustry:core", version.ref = "mindustryVersion" }
+
+json = "com.googlecode.json-simple:json-simple:1.1.1"
+
