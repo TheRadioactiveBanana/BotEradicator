@@ -21,4 +21,6 @@ A simple and easy to use/setup, but very powerful Anti-Bot and Anti-DDoS Mindust
 - Discuss with me on discord and maybe make a PR or something.
 
 Plugin by TheRadioactiveBanana#0545 (@theradioactivebanana) On discord.
+News about this is available on [My discord server](https://discord.gg/AedRPwWTak)
+
 Frick bots.
