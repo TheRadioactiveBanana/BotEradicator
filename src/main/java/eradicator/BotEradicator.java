@@ -6,7 +6,7 @@ import arc.net.*;
 import arc.struct.*;
 import arc.util.*;
 
-import mindustry.core.NetServer;
+import mindustry.core.*;
 import mindustry.gen.*;
 import mindustry.net.*;
 
@@ -18,7 +18,6 @@ import org.json.simple.parser.*;
 import java.io.*;
 import java.net.*;
 
-import java.time.format.DateTimeFormatter;
 import java.util.concurrent.ExecutorService;
 
 import static arc.util.Strings.*;
@@ -30,11 +29,10 @@ public class BotEradicator extends Plugin implements ApplicationListener {
     public static BotEradicator instance;
     private final ObjectSet<String> filteredIps = new ObjectSet<>();
     private final Seq<Subnet> bannedSubnets = new Seq<>();
-    private int botsBlocked = 0;
-    private int botsBlockedTotal = Core.settings.getInt("eradicator-total-count", 0);
+    public int botsBlocked = 0;
+    public int botsBlockedTotal = Core.settings.getInt("eradicator-total-count", 0);
     private final ObjectIntMap<String> ipCounts = new ObjectIntMap<>();
     private final ObjectMap<String, Ratekeeper> ipRates = new ObjectMap<>();
-    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM HH:mm:ss");
     protected ExecutorService executor = Threads.boundedExecutor("Bot Killer", Config.threadCount.num());
 
     public BotEradicator() {
@@ -49,8 +47,8 @@ public class BotEradicator extends Plugin implements ApplicationListener {
                 })
                 .submit(response -> {
                     var result = response.getResultAsString().split("\n");
-                    for (var address : result)
-                        bannedSubnets.add(parseSubnet(address));
+
+                    for (var address : result) bannedSubnets.add(parseSubnet(address));
 
                     fetchFromFiles();
 
@@ -58,41 +56,34 @@ public class BotEradicator extends Plugin implements ApplicationListener {
                 });
     }
 
+    private boolean init = false;
     @Override
     public void init() {
+        BotEvents.init();
+
+        if (init) return; //WHY YOU RUN ON MOD AND APPLICATION LISTENER AAAAAA
+        init = true;
         Time.runTask(Config.loadDelay.num(),()-> //Run delayed so that whatever other mods can place their filters first.
                 Core.app.post(this::loadFilters));
     }
 
+    /**Place the plugin's filter BEFORE every other filter. This does not interfere with existing filters.**/
     private void loadFilters(){
         var server = Reflect.<Server>get(Reflect.<ArcNetProvider>get(net, "provider"), "server");
 
         var filter = Reflect.<Server.ServerConnectFilter>get(server, "connectFilter");
 
-        if (filter == null) {
-            server.setConnectFilter((t) -> {
-                if (filteredIps.contains(t)) {
-                    ipCounts.increment(t);
-                    botsBlocked++;
-                    botsBlockedTotal++;
-                    Events.fire(new BotEvents.BotFiltered(t));
-                    return false;
-                }
+        server.setConnectFilter((t) -> {
+            if (filteredIps.contains(t)) {
+                ipCounts.increment(t);
+                botsBlocked++;
+                botsBlockedTotal++;
+                Events.fire(new BotEvents.BotFiltered(t));
+                return false;
+            }
 
-                return true;
-            });
-        }else{
-            server.setConnectFilter((t) -> {
-                if (filteredIps.contains(t)) {
-                    ipCounts.increment(t);
-                    botsBlocked++;
-                    Events.fire(new BotEvents.BotKicked(t));
-                    return false;
-                }
-
-                return filter.accept(t);
-            });
-        }
+            return filter == null || filter.accept(t);
+        });
 
         var s = Reflect.<ObjectMap<Class<?>, Cons2<NetConnection, Object>>>get(net, "serverListeners");
 
@@ -141,18 +132,13 @@ public class BotEradicator extends Plugin implements ApplicationListener {
             connectListener.get(t, e);
         });
     }
-    //Now you can Kick a connection with a reason but without logging it in the console. No more spam.
-    private static void kickConnectionWithoutLogging(NetConnection connection, String reason){
-        KickCallPacket packet = new KickCallPacket();
-        packet.reason = reason;
-        connection.send(packet, true);
-        connection.close();
-    }
+
     @Override
     public void registerServerCommands(CommandHandler handler) {
         handler.register("botstatus", "Get a status of the plugin.", (t)->{
-            log("@ Subnets are currently loaded in memory.", bannedSubnets.size);
+            log("@ Banned Subnets are currently loaded in memory.", bannedSubnets.size);
             log("@ IPs are currently blocked.", filteredIps.size > 0 ? filteredIps.size : "No");
+            log("@ Bots were blocked on this session, and @ bots were blocked during the lifetime of the plugin.", botsBlocked, botsBlockedTotal);
             for (var s : filteredIps) log("@@ - @ Bots Blocked.", getFancyChar(s, filteredIps), s, ipCounts.get(s));
             log("Plugin by TheRadioactiveBanana#0545. (@TheRadioactiveBanana) | Report any bugs to me, Please. I want to keep this plugin as good as possible.");
         });
@@ -171,6 +157,7 @@ public class BotEradicator extends Plugin implements ApplicationListener {
                 String key = args[0];
                 String value = args[1];
                 for(var c : Config.all){
+                    if(!c.shortName().startsWith(key)) return;
                     if(value.equals("true") || value.equals("false") && c.isBool()){
                         c.set(Boolean.parseBoolean(value));
                         log("@ set to @.", c.name, value);
@@ -196,10 +183,17 @@ public class BotEradicator extends Plugin implements ApplicationListener {
         log("@ Bots blocked on this session.", botsBlocked);
     }
 
+    @Override
+    public void update(){
+        Core.settings.put("eradicator-total-count", botsBlocked); //keep up to date
+    }
+
     private boolean isBot(String ip){
         if(!ipRates.containsKey(ip)) ipRates.put(ip, new Ratekeeper());
 
         if(!ipRates.get(ip).allow(Config.ratekeeperSpacing.num(), Config.ratekeeperAmount.num())) return true;
+
+        if(Groups.player.count(t->t.ip().equals(ip)) > Config.duplicateConnectionLimit.num()) return true;
 
         if(Groups.player.count(t->t.ip().equals(ip)) > 1){
             filteredIps.add(ip);
@@ -220,6 +214,7 @@ public class BotEradicator extends Plugin implements ApplicationListener {
 
             return false;
         }catch (Exception e){
+            logError("How did we get here?", e);
             return true;
         }
     }
@@ -247,7 +242,7 @@ public class BotEradicator extends Plugin implements ApplicationListener {
 
         return new Subnet(ip, mask);
     }
-
+    //Most likely faster for just player ip.
     public static Subnet parseSubnetFromPlayer(String address) throws UnknownHostException {
 
         int ip = 0;
@@ -263,6 +258,14 @@ public class BotEradicator extends Plugin implements ApplicationListener {
         for (var i : mods.getMod(BotEradicator.class).root.child("blacklist").list())
             bannedSubnets.addAll(fetchFromFile(i.name()));
         logDebug("Fetched Subnets from files in @ ms.", Time.elapsed());
+    }
+
+    /**Now you can Kick a connection with a reason but without logging it in the console. No more spam.**/
+    private static void kickConnectionWithoutLogging(NetConnection connection, String reason){
+        KickCallPacket packet = new KickCallPacket();
+        packet.reason = reason;
+        connection.send(packet, true);
+        connection.close();
     }
 
     @SuppressWarnings("unchecked")
@@ -290,7 +293,7 @@ public class BotEradicator extends Plugin implements ApplicationListener {
 
     //Arc logger is mild sin.
     public static void log(String s){
-        Log.info("[&yBOTKILLER&lk]:&fr " + s);
+        Log.info("&lk[&yBOTKILLER&lk]:&fr " + s);
     }
 
     public static void log(String s, Object... args){
@@ -299,7 +302,7 @@ public class BotEradicator extends Plugin implements ApplicationListener {
 
     public static void logDebug(String s){
         if(!Administration.Config.debug.bool()) return;
-        Log.debug("[&lcBOTDEBUG&lk]:&fr " + s);
+        Log.debug("&lk[&lcBOTKILLER&lk]:&fr " + s);
     }
 
     public static void logDebug(String s, Object... args){
@@ -308,7 +311,7 @@ public class BotEradicator extends Plugin implements ApplicationListener {
     }
 
     public static void logError(String s, Throwable e){
-        logError("[&rBOTERROR&lk]:&fr " + s);
+        logError("&lk[&BOTKILLER&lk]:&fr " + s);
         Log.err(e);
     }
 
@@ -316,9 +319,9 @@ public class BotEradicator extends Plugin implements ApplicationListener {
         Log.err("[&rBOTERROR&lk]:&fr " + s);
     }
 
-    //Literally just so a couple list commands look good.
+    /**Literally just so a couple list commands look good.**/
     private static <T> String getFancyChar(T object, Iterable<T> iterable){
         var s = Seq.with(iterable);
-        return object == s.get(s.size - 1) ? "└" : "├";
+        return Config.enhance.bool() ? (object == s.get(s.size - 1) ? "└" : "├") : "  ";
     }
 }

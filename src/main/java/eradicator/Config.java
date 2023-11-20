@@ -18,7 +18,10 @@ public class Config {
         threadCount = new ConfigValue("Kicking Thread Count", "The amount of threads to kick connections with. Default is twice your CPU threads.", Runtime.getRuntime().availableProcessors() * 2, ()->{
             BotEradicator.instance.executor.shutdownNow().forEach(Runnable::run);
             BotEradicator.instance.executor = Threads.boundedExecutor("Bot Killer", Config.all.find(t->t.name.startsWith("Kicking")).num()); //mild ASB.
-        });
+        }),
+        enhance = new ConfigValue("Enhance", "Disable this if your console is bugged.", true),
+        logEvents = new ConfigValue("Log events", "Log if a new IP gets blocked etc. This may spam console a bit.", false),
+        duplicateConnectionLimit = new ConfigValue("Duplicate Connection Limit", "Limit of how many connections from the same IP can be there. 0 to disable.", 1);
 
 
     public static class ConfigValue {
