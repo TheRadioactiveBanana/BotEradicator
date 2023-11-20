@@ -1,6 +1,10 @@
 # BotEradicator
 A simple and easy to use/setup, but very powerful Anti-Bot and Anti-DDoS Mindustry server plugin.
 
+# Commands
+- botstatus - view status of the plugin and what bots banned from what ips.
+- botconfig - configure the plugin. By default, settings are loaded to keep your server safe from 99%-100% of the bots.
+
 # How to install
 - Download the latest release from releases.
 - Upload to your servers config/mods directory.
