@@ -21,6 +21,12 @@ This plugin does not interfere with any other server plugins (most probably, if 
 # Have an improvement?
 - Discuss with me on discord and maybe make a PR or something.
 
+# If you want an IP removed from this list
+- Don't even try unless its verified to not be a cloud IP.
+- I don't want to waste my time removing random subnets that people own.
+- It is not a "reputation issue", There are so many subnets here no one cares.
+
+
 Plugin by TheRadioactiveBanana#0545 (@theradioactivebanana) On discord.
 News about this is available on [My discord server](https://discord.gg/AedRPwWTak)
 
