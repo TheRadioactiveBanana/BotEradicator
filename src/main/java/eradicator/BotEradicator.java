@@ -19,31 +19,37 @@ import static mindustry.Vars.*;
 public class BotEradicator extends Plugin implements ApplicationListener {
 
     public static final ObjectSet<Subnet> bannedSubnets = new ObjectSet<>();
-    public static final ObjectIntMap<String> botsBlockedPerAddress = new ObjectIntMap<>();
     public static final ObjectSet<String> alreadyBlockedIps = new ObjectSet<>();
+    public static final ObjectIntMap<String> botsBlockedPerAddress = new ObjectIntMap<>();
     public static final ObjectMap<String, Ratekeeper> ipRatekeepers = new ObjectMap<>();
-    public static BotEradicator instance;
     public static ExecutorService executor = Threads.boundedExecutor("bot-eradicator",Config.threadCount.num());
     public static int botsBlocked;
     public static int botsBlockedTotal;
 
     public BotEradicator(){
-        Core.app.addListener(instance = this);
+        info("Loading Bot Eradicator v2.0...");
+
+        Core.app.addListener(this);
 
         Threads.daemon(()-> {
-            Http.post("https://raw.githubusercontent.com/X4BNet/lists_vpn/main/output/datacenter/ipv4.txt")
-                    .timeout(30)
-                    .error(Logging::err)
-                    .block(t -> {
-                        for (var s : t.getResultAsString().split("\n")) bannedSubnets.add(new Subnet(s));
-                        debug("Fetched @ addresses from online datacenter list.", t.getResultAsString().split("\n").length);
+            Http.get("https://raw.githubusercontent.com/X4BNet/lists_vpn/main/output/datacenter/ipv4.txt").timeout(0)
+                    .error(error -> err("Failed to fetch online datacenter subnets, fetched " + bannedSubnets.size + " backups instead.", error))
+                    .block(response -> {
+                        var result = response.getResultAsString().split("\n");
+
+                        for (var address : result) bannedSubnets.add(new Subnet(address));
+
+                        debug("Fetched @ datacenter subnets.", result.length);
                     });
-            Http.post("https://raw.githubusercontent.com/X4BNet/lists_vpn/main/output/vpn/ipv4.txt")
-                    .timeout(30)
-                    .error(Logging::err)
-                    .block(t -> {
-                        for (var s : t.getResultAsString().split("\n")) bannedSubnets.add(new Subnet(s));
+
+            Http.get("https://raw.githubusercontent.com/X4BNet/lists_vpn/main/output/vpn/ipv4.txt").timeout(0)
+                    .error(error -> err("Failed to fetch online datacenter subnets, fetched " + bannedSubnets.size + " backups instead.", error))
+                    .block(response -> {
+                        var result = response.getResultAsString().split("\n");
+                        for (var address : result) bannedSubnets.add(new Subnet(address));
+                        debug("Fetched @ VPN subnets.", result.length);
                     });
+
             fetchFromFiles();
             info("Fetched @ banned subnets.", bannedSubnets.size);
         });
@@ -55,7 +61,7 @@ public class BotEradicator extends Plugin implements ApplicationListener {
         if(alreadyInit) return;
         alreadyInit = true; //this is very gay, and I am much too lazy to fix it.
 
-        botsBlocked = Core.settings.getInt("eradicator-bots-blocked", 0);
+        botsBlockedTotal = Core.settings.getInt("eradicator-bots-blocked", 0);
 
         BotEvents.init();
 
@@ -129,8 +135,13 @@ public class BotEradicator extends Plugin implements ApplicationListener {
 
     @Override
     public void update(){
-        Core.settings.put("eradicator-bots-blocked", botsBlocked);
-        Core.settings.put("eradicator-bots-blocked-total", botsBlockedTotal);
+        Core.settings.put("eradicator-bots-blocked", botsBlockedTotal);
+    }
+
+    @Override
+    public void dispose(){
+        info("@ Bots were blocked on this session. @ Bots were blocked in total.", botsBlocked, botsBlockedTotal);
+        executor.shutdownNow().forEach(Runnable::run);
     }
 
     @Override
@@ -186,14 +197,21 @@ public class BotEradicator extends Plugin implements ApplicationListener {
         if(!ipRatekeepers.get(s).allow(Config.ratekeeperSpacing.num(), Config.ratekeeperAmount.num())) {
             bannedSubnets.add(Subnet.parseUnmasked(s));
             Events.fire(new BotEvents.ConnectionRateLimited(s));
+            debug("Adding @ to blacklist for @ seconds.", s, Config.ratekeeperExceedUnbanTime);
             Timer.schedule(()->bannedSubnets.remove(Subnet.parseUnmasked(s)), Config.ratekeeperExceedUnbanTime.num());
         }
+        if(Groups.player.count(t->t.ip().equals(s)) > Config.duplicateConnectionLimit.num()){
+            bannedSubnets.add(Subnet.parseUnmasked(s));
+            debug("Adding @ to blacklist for @ seconds.", s, Config.ratekeeperExceedUnbanTime);
+            Timer.schedule(()->bannedSubnets.remove(Subnet.parseUnmasked(s)), Config.ratekeeperExceedUnbanTime.num());
+            return true;
+        }
 
-        return bannedSubnets.contains(Subnet.parseUnmasked(s)) ;
+        return bannedSubnets.contains(Subnet.parseUnmasked(s));
     }
 
     private void fetchFromFiles() {
-        for(var s : mods.getMod(BotEradicator.class).root.child("blacklist").child("blacklist.txt").readString().split("\n")){
+        for(var s : mods.getMod(BotEradicator.class).root.child("blacklist.txt").readString().split("\n")){
             int ip = parseInt(s.split("\\|")[0]), mask = parseInt(s.split("\\|")[1]);
             bannedSubnets.add(new Subnet(ip, mask));
         }

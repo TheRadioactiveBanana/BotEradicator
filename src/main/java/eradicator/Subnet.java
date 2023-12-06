@@ -61,9 +61,4 @@ public class Subnet {
             throw new RuntimeException("Error while parsing subnet", e);
         }
     }
-
-    @Override
-    public int hashCode(){
-        return ip * mask;
-    }
 }
