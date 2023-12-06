@@ -1,0 +1,10 @@
+{
+  "name": "bot-eradicator",
+  "displayName:": "Bot Eradicator",
+  "description": "Utterly eradicate DDoS bots.",
+  "author": "TheRadioactiveBanana",
+  "main": "eradicator.BotEradicator",
+  "java": true,
+  "repo": "https://github.com/TheRadioactiveBanana/BotEradicator",
+  "version": "2.0"
+}
