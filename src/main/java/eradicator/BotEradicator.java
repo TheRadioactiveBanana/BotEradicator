@@ -133,14 +133,20 @@ public class BotEradicator extends Plugin implements ApplicationListener {
         });
     }
 
+    private int botsBlockedOld = botsBlockedTotal;
+
     @Override
     public void update(){
-        Core.settings.put("eradicator-bots-blocked", botsBlockedTotal);
+        if(botsBlockedTotal != botsBlockedOld) {
+            botsBlockedOld = botsBlockedTotal;
+            Core.settings.put("eradicator-bots-blocked", botsBlockedTotal);
+        }
     }
 
     @Override
     public void dispose(){
         info("@ Bots were blocked on this session. @ Bots were blocked in total.", botsBlocked, botsBlockedTotal);
+        Core.settings.put("eradicator-bots-blocked", botsBlockedTotal);
         executor.shutdownNow().forEach(Runnable::run);
     }
 
@@ -148,7 +154,7 @@ public class BotEradicator extends Plugin implements ApplicationListener {
     public void registerServerCommands(CommandHandler handler){
         handler.register("botstatus", "View the status of the plugin, how many bots blocked, etc", (args)->{
             info("Bots blocked on this session: @", botsBlocked);
-            info("Bots blocked always: @", botsBlockedTotal);
+            info("Bots blocked of all time: @", botsBlockedTotal);
             for(var s : botsBlockedPerAddress.entries()) info("Bots blocked for @: @", s.key, s.value);
             info("Plugin by TheRadioactiveBanana#0545 (@theradioactivebanana) On discord. ");
         });
