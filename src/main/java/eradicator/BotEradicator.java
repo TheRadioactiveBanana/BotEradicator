@@ -59,7 +59,7 @@ public class BotEradicator extends Plugin implements ApplicationListener {
     @Override
     public void init(){
         if(alreadyInit) return;
-        alreadyInit = true; //this is very gay, and I am much too lazy to fix it.
+        alreadyInit = true; //this is very bad, and I am much too lazy to fix it.
 
         botsBlockedTotal = Core.settings.getInt("eradicator-bots-blocked", 0);
 
